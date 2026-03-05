@@ -158,7 +158,7 @@ psql -U postgres -d salud_total -f database/04_datos_iniciales.sql
 ```python
 python -c "import bcrypt; print(bcrypt.hashpw(b'admin', bcrypt.gensalt(12)).decode())"
 # Copiar el hash y actualizar en BD:
-# UPDATE seguridad.usuarios SET password_hash='hash_copiado' WHERE username='admin';
+# UPDATE seguridad.usuarios SET password_hash='$2b$12$bw7xgNXtP9Y0/z71ePyTguVtdIs05bDWiNj18xPC2gStQNfHVLpXK' WHERE username='admin';
 ```
 
 ### 6. Ejecutar la aplicación
