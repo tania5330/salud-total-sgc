@@ -14,7 +14,7 @@ INSERT INTO seguridad.roles (nombre, descripcion) VALUES
 -- Hash bcrypt generado externamente
 INSERT INTO seguridad.usuarios (username, email, password_hash, nombre, apellido) VALUES
 ('admin', 'admin@saludtotal.com',
-'$2b$12$placeholder_hash_reemplazar_en_deploy',
+'$2b$12$HZ4rSDNHhVMESHI2sFGxWe7QZQ9X/nWUHZk8x61085MSuu/G2QDRq',
  'Administrador', 'Sistema');
 
 INSERT INTO seguridad.usuario_roles (usuario_id, rol_id)
@@ -201,4 +201,3 @@ VALUES
  (SELECT id FROM clinica.especialidades WHERE codigo='CARD'),
  5, 'ESPERANDO', 'Paciente solicita evaluación prioritaria');
 
-UPDATE seguridad.usuarios SET password_hash='$2b$12$bw7xgNXtP9Y0/z71ePyTguVtdIs05bDWiNj18xPC2gStQNfHVLpXK' WHERE username='admin';
