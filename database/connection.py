@@ -11,6 +11,10 @@ from config import DATABASE_URL, DEBUG
 
 logger = logging.getLogger(__name__)
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+try:
+    import streamlit as st  # opcional, disponible en Cloud
+except Exception:
+    st = None
 
 # Motor con pool de conexiones optimizado para producción
 engine = create_engine(
@@ -90,6 +94,11 @@ def init_db():
     except Exception as e:
         logger.error(f"Error al cargar datos iniciales: {e}")
         raise
+    # Asegurar un segundo administrador si se configuró por variables/secretos
+    try:
+        _ensure_secondary_admin()
+    except Exception as e:
+        logger.warning(f"No se pudo crear el administrador secundario (continuamos): {e}")
 
 
 def _run_indices_if_needed():
@@ -143,6 +152,61 @@ def _run_seed_data_if_needed():
             except Exception as e:
                 logger.error(f"Error en sentencia de datos iniciales: {e}")
                 raise
+
+
+def _get_secret(name: str):
+    """Leer primero de variables de entorno y luego de Streamlit Secrets, si existe."""
+    val = os.getenv(name)
+    if not val and st is not None:
+        try:
+            if name in st.secrets:
+                val = st.secrets[name]
+        except Exception:
+            pass
+    return val
+
+
+def _ensure_secondary_admin():
+    """
+    Crear un usuario administrador secundario si está configurado:
+      SEED_ADMIN_USERNAME, SEED_ADMIN_EMAIL y uno de:
+      - SEED_ADMIN_PASSWORD (en texto plano, será hasheado con bcrypt)
+      - SEED_ADMIN_PASSWORD_HASH (bcrypt ya generado)
+    Idempotente: si el username ya existe, no hace nada.
+    """
+    import bcrypt
+
+    username = _get_secret("SEED_ADMIN_USERNAME") or "admin_cloud"
+    email    = _get_secret("SEED_ADMIN_EMAIL")    or "admin.cloud@saludtotal.com"
+    pwd_pl   = _get_secret("SEED_ADMIN_PASSWORD")
+    pwd_h    = _get_secret("SEED_ADMIN_PASSWORD_HASH")
+
+    if not pwd_h and not pwd_pl:
+        # Si no se configuró password, no creamos nada
+        return
+    if not pwd_h and pwd_pl:
+        salt = bcrypt.gensalt(rounds=12)
+        pwd_h = bcrypt.hashpw(pwd_pl.encode(), salt).decode()
+
+    with engine.begin() as conn:
+        # Crear usuario si no existe
+        conn.execute(text("""
+            INSERT INTO seguridad.usuarios (username, email, password_hash, nombre, apellido, activo)
+            SELECT :user, :email, :ph, 'Admin', 'Cloud', TRUE
+            WHERE NOT EXISTS (SELECT 1 FROM seguridad.usuarios WHERE username = :user)
+        """), {"user": username, "email": email, "ph": pwd_h})
+
+        # Asignar rol ADMINISTRADOR si no lo tiene
+        conn.execute(text("""
+            INSERT INTO seguridad.usuario_roles (usuario_id, rol_id)
+            SELECT u.id, r.id
+            FROM seguridad.usuarios u, seguridad.roles r
+            WHERE u.username = :user AND r.nombre = 'ADMINISTRADOR'
+              AND NOT EXISTS (
+                SELECT 1 FROM seguridad.usuario_roles ur
+                WHERE ur.usuario_id = u.id AND ur.rol_id = r.id
+              )
+        """), {"user": username})
 
 
 def test_connection():
