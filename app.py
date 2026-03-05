@@ -171,8 +171,13 @@ def main():
     # Inicializar esquemas y tablas si aún no existen (sin mostrar mensaje de éxito)
     try:
         init_db()
-    except Exception:
+    except Exception as e:
+        err = str(e).strip()
         st.error("❌ Error al inicializar la base de datos. Revise la configuración y los logs del servidor.")
+        st.caption(f"**Detalle:** {err[:500]}" + ("…" if len(err) > 500 else ""))
+        with st.expander("Ver detalles técnicos"):
+            import traceback
+            st.code(traceback.format_exc(), language="text")
         st.stop()
 
     # Estado de sesión inicial

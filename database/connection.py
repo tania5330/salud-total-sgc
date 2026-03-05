@@ -78,12 +78,17 @@ def init_db():
         logger.error(f"Error al crear tablas: {e}")
         raise
 
-    # Índices (03) y datos iniciales (04) — solo si la BD está vacía
+    # Índices (03) — opcional; si falla (ej. extensión no disponible) seguimos
     try:
         _run_indices_if_needed()
+    except Exception as e:
+        logger.warning(f"Índices no cargados (seguimos sin ellos): {e}")
+
+    # Datos iniciales (04) — solo si la BD está vacía
+    try:
         _run_seed_data_if_needed()
     except Exception as e:
-        logger.error(f"Error al cargar índices o datos iniciales: {e}")
+        logger.error(f"Error al cargar datos iniciales: {e}")
         raise
 
 
