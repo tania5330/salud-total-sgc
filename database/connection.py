@@ -129,9 +129,9 @@ def _run_seed_data_if_needed():
     statements = []
     for block in content.split(";\n"):
         block = block.strip()
-        if not block or block.startswith("--"):
+        if not block:
             continue
-        # Quitar líneas que son solo comentarios SQL
+        # Quitar líneas que son solo comentarios SQL (no saltar bloques que empiezan con comentario pero tienen INSERT)
         lines = [line for line in block.split("\n") if not line.strip().startswith("--")]
         stmt = "\n".join(lines).strip()
         if stmt and ("INSERT" in stmt or "UPDATE" in stmt or "DELETE" in stmt):

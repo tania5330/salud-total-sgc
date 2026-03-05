@@ -184,16 +184,16 @@ VALUES
  NOW(), 100.00, 0.00, 18.00, 118.00, 'PENDIENTE', 'Consulta ambulatoria', (SELECT id FROM seguridad.usuarios WHERE username='admin'));
 
 INSERT INTO clinica.detalle_facturas (factura_id, servicio_id, descripcion, cantidad, precio_unit, descuento, subtotal)
-VALUES
-((SELECT id FROM clinica.facturas WHERE numero_factura='F001-000001'),
- (SELECT id FROM clinica.servicios WHERE codigo='CONS-MG'),
- 'Consulta Medicina General', 1, 100.00, 0.00, 100.00);
+SELECT f.id, s.id, 'Consulta Medicina General', 1, 100.00, 0.00, 100.00
+FROM clinica.facturas f
+CROSS JOIN clinica.servicios s
+WHERE f.numero_factura = 'F001-000001' AND s.codigo = 'CONS-MG';
 
 -- REGISTRO DE PAGO
 INSERT INTO clinica.pagos (factura_id, monto, metodo_pago, referencia, usuario_id, observaciones)
-VALUES
-((SELECT id FROM clinica.facturas WHERE numero_factura='F001-000001'),
- 118.00, 'EFECTIVO', 'CAJA-0001', (SELECT id FROM seguridad.usuarios WHERE username='admin'), 'Pago completo');
+SELECT f.id, 118.00, 'EFECTIVO', 'CAJA-0001', (SELECT id FROM seguridad.usuarios WHERE username='admin'), 'Pago completo'
+FROM clinica.facturas f
+WHERE f.numero_factura = 'F001-000001';
 
 -- LISTA DE ESPERA (EJEMPLO)
 INSERT INTO clinica.lista_espera (paciente_id, especialidad_id, prioridad, estado, observaciones)
