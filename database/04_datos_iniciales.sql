@@ -14,7 +14,7 @@ INSERT INTO seguridad.roles (nombre, descripcion) VALUES
 -- Hash bcrypt generado externamente
 INSERT INTO seguridad.usuarios (username, email, password_hash, nombre, apellido) VALUES
 ('admin', 'admin@saludtotal.com',
-'$2b$12$HZ4rSDNHhVMESHI2sFGxWe7QZQ9X/nWUHZk8x61085MSuu/G2QDRq',
+'$2b$12$ccVbyOEe9neePc0fydXi9uq1HeS21YD3ywBmp1GO9Spe83XCsQpna',
  'Administrador', 'Sistema');
 
 INSERT INTO seguridad.usuario_roles (usuario_id, rol_id)

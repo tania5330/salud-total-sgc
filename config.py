@@ -14,6 +14,15 @@ _raw_database_url = (
     or os.getenv("POSTGRESQL_URL")
 )
 
+# Leer desde Streamlit Secrets si está disponible
+if not _raw_database_url:
+    try:
+        import streamlit as st
+        if "DATABASE_URL" in st.secrets:
+            _raw_database_url = st.secrets["DATABASE_URL"]
+    except Exception:
+        pass
+
 # ── Base de datos ──────────────────────────────────────────
 DB_CONFIG = {
     "host":     os.getenv("DB_HOST", "localhost"),
@@ -24,12 +33,10 @@ DB_CONFIG = {
 }
 
 if _raw_database_url:
-    # Render suele exponer postgres://; SQLAlchemy necesita postgresql+psycopg2://
     if _raw_database_url.startswith("postgres://"):
         _raw_database_url = _raw_database_url.replace(
             "postgres://", "postgresql+psycopg2://", 1
         )
-    # Render y otros proveedores en la nube suelen requerir SSL
     if "render.com" in _raw_database_url and "sslmode" not in _raw_database_url:
         _raw_database_url += "?sslmode=require" if "?" not in _raw_database_url else "&sslmode=require"
     DATABASE_URL = _raw_database_url
@@ -43,7 +50,15 @@ else:
     )
 
 # ── Seguridad ──────────────────────────────────────────────
-SECRET_KEY       = os.getenv("SECRET_KEY", "cambia-este-secreto-en-produccion")
+SECRET_KEY       = os.getenv("SECRET_KEY") or None
+if not SECRET_KEY:
+    try:
+        import streamlit as st
+        SECRET_KEY = st.secrets.get("SECRET_KEY", None)
+    except Exception:
+        SECRET_KEY = None
+if not SECRET_KEY:
+    SECRET_KEY = "cambia-este-secreto-en-produccion"
 JWT_ALGORITHM    = "HS256"
 JWT_EXPIRE_HOURS = int(os.getenv("JWT_EXPIRE_HOURS", 8))
 BCRYPT_ROUNDS    = 12
