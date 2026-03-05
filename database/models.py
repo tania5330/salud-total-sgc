@@ -57,6 +57,14 @@ class Usuario(Base):
     created_by     = Column(Integer, ForeignKey("seguridad.usuarios.id"))
 
 
+class UsuarioRol(Base):
+    __tablename__  = "usuario_roles"
+    __table_args__ = {"schema": "seguridad"}
+
+    usuario_id = Column(Integer, ForeignKey("seguridad.usuarios.id", ondelete="CASCADE"), primary_key=True)
+    rol_id     = Column(Integer, ForeignKey("seguridad.roles.id", ondelete="CASCADE"), primary_key=True)
+
+
 class Sesion(Base):
     __tablename__  = "sesiones"
     __table_args__ = {"schema": "seguridad"}
@@ -309,6 +317,21 @@ class Cita(Base):
     paciente  = relationship("Paciente", back_populates="citas")
     medico    = relationship("Medico", back_populates="citas")
     consultas = relationship("Consulta", back_populates="cita")
+
+
+class ListaEspera(Base):
+    __tablename__  = "lista_espera"
+    __table_args__ = {"schema": "clinica"}
+
+    id               = Column(Integer, primary_key=True)
+    paciente_id      = Column(Integer, ForeignKey("clinica.pacientes.id"), nullable=False)
+    medico_id        = Column(Integer, ForeignKey("clinica.medicos.id"))
+    especialidad_id  = Column(Integer, ForeignKey("clinica.especialidades.id"))
+    fecha_solicitud  = Column(DateTime, server_default=func.now())
+    prioridad        = Column(SmallInteger, default=5)
+    estado           = Column(String(20), default="ESPERANDO")
+    cita_asignada_id = Column(Integer, ForeignKey("clinica.citas.id"))
+    observaciones    = Column(Text)
 
 
 class Consulta(Base):

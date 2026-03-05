@@ -1,6 +1,7 @@
 # ============================================================
 # database/connection.py — Pool de conexiones SQLAlchemy
 # ============================================================
+import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import QueuePool
@@ -9,6 +10,7 @@ import logging
 from config import DATABASE_URL, DEBUG
 
 logger = logging.getLogger(__name__)
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Motor con pool de conexiones optimizado para producción
 engine = create_engine(
@@ -75,6 +77,67 @@ def init_db():
     except Exception as e:
         logger.error(f"Error al crear tablas: {e}")
         raise
+
+    # Índices (03) y datos iniciales (04) — solo si la BD está vacía
+    try:
+        _run_indices_if_needed()
+        _run_seed_data_if_needed()
+    except Exception as e:
+        logger.error(f"Error al cargar índices o datos iniciales: {e}")
+        raise
+
+
+def _run_indices_if_needed():
+    """Ejecuta 03_indices.sql usando CREATE INDEX IF NOT EXISTS."""
+    path = os.path.join(_THIS_DIR, "03_indices.sql")
+    if not os.path.isfile(path):
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+    # Reemplazar CREATE INDEX por CREATE INDEX IF NOT EXISTS para idempotencia
+    content = content.replace("CREATE INDEX ", "CREATE INDEX IF NOT EXISTS ")
+    statements = [s.strip() for s in content.split(";") if s.strip() and not s.strip().startswith("--")]
+    with engine.begin() as conn:
+        for stmt in statements:
+            if "CREATE INDEX" in stmt:
+                try:
+                    conn.execute(text(stmt + ";"))
+                except Exception as e:
+                    logger.debug(f"Índice ya existe o error ignorable: {e}")
+
+
+def _run_seed_data_if_needed():
+    """Ejecuta 04_datos_iniciales.sql solo si no hay usuarios (BD recién creada)."""
+    with engine.connect() as conn:
+        r = conn.execute(text("SELECT COUNT(*) AS n FROM seguridad.usuarios"))
+        row = r.mappings().first()
+        n = (row["n"] or 0) if row else 0
+    if n > 0:
+        return
+    path = os.path.join(_THIS_DIR, "04_datos_iniciales.sql")
+    if not os.path.isfile(path):
+        logger.warning("No se encontró 04_datos_iniciales.sql; no se cargaron datos iniciales.")
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+    # Dividir por ;\n para obtener sentencias (evitar partir dentro de valores)
+    statements = []
+    for block in content.split(";\n"):
+        block = block.strip()
+        if not block or block.startswith("--"):
+            continue
+        # Quitar líneas que son solo comentarios SQL
+        lines = [line for line in block.split("\n") if not line.strip().startswith("--")]
+        stmt = "\n".join(lines).strip()
+        if stmt and ("INSERT" in stmt or "UPDATE" in stmt or "DELETE" in stmt):
+            statements.append(stmt)
+    with engine.begin() as conn:
+        for stmt in statements:
+            try:
+                conn.execute(text(stmt))
+            except Exception as e:
+                logger.error(f"Error en sentencia de datos iniciales: {e}")
+                raise
 
 
 def test_connection() -> bool:
