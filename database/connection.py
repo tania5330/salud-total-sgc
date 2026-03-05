@@ -56,20 +56,24 @@ def init_db():
     Crear esquemas y tablas si no existen.
     Se puede ejecutar en cada arranque; es idempotente.
     """
-    try:
-        # Importa modelos para que todas las tablas estén registradas en Base.metadata
-        import database.models  # noqa: F401
+    # Importa modelos para que todas las tablas estén registradas en Base.metadata
+    import database.models  # noqa: F401
 
+    # Crear esquemas (idempotente)
+    try:
         with engine.begin() as conn:
-            # Esquemas usados por los modelos
             conn.execute(text("CREATE SCHEMA IF NOT EXISTS seguridad"))
             conn.execute(text("CREATE SCHEMA IF NOT EXISTS clinica"))
             conn.execute(text("CREATE SCHEMA IF NOT EXISTS auditoria"))
-
-            # Crear tablas definidas en los modelos
-            Base.metadata.create_all(bind=conn)
     except Exception as e:
-        logger.error(f"Error al inicializar la base de datos: {e}")
+        logger.error(f"Error al crear esquemas: {e}")
+        raise
+
+    # Crear tablas con el engine para que SQLAlchemy resuelva el orden por FKs
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        logger.error(f"Error al crear tablas: {e}")
         raise
 
 

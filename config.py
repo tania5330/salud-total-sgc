@@ -29,6 +29,9 @@ if _raw_database_url:
         _raw_database_url = _raw_database_url.replace(
             "postgres://", "postgresql+psycopg2://", 1
         )
+    # Render y otros proveedores en la nube suelen requerir SSL
+    if "render.com" in _raw_database_url and "sslmode" not in _raw_database_url:
+        _raw_database_url += "?sslmode=require" if "?" not in _raw_database_url else "&sslmode=require"
     DATABASE_URL = _raw_database_url
 else:
     _user = quote_plus(DB_CONFIG["user"]) if DB_CONFIG["user"] else ""

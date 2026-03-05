@@ -130,6 +130,47 @@ class Servicio(Base):
     created_at      = Column(DateTime, server_default=func.now())
 
 
+class TipoSeguro(Base):
+    __tablename__  = "tipos_seguro"
+    __table_args__ = {"schema": "clinica"}
+
+    id          = Column(Integer, primary_key=True)
+    nombre      = Column(String(100), nullable=False)
+    descripcion = Column(Text)
+    activo      = Column(Boolean, default=True)
+
+
+class Seguro(Base):
+    __tablename__  = "seguros"
+    __table_args__ = {"schema": "clinica"}
+
+    id          = Column(Integer, primary_key=True)
+    tipo_id     = Column(Integer, ForeignKey("clinica.tipos_seguro.id"))
+    nombre      = Column(String(150), nullable=False)
+    ruc         = Column(String(20))
+    contacto    = Column(String(100))
+    telefono    = Column(String(20))
+    email       = Column(String(120))
+    activo      = Column(Boolean, default=True)
+    created_at  = Column(DateTime, server_default=func.now())
+    updated_at  = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class Tarifario(Base):
+    __tablename__  = "tarifarios"
+    __table_args__ = {"schema": "clinica"}
+
+    id             = Column(Integer, primary_key=True)
+    servicio_id    = Column(Integer, ForeignKey("clinica.servicios.id"), nullable=False)
+    seguro_id      = Column(Integer, ForeignKey("clinica.seguros.id"))
+    precio         = Column(Numeric(10, 2), nullable=False)
+    vigente_desde  = Column(Date, nullable=False)
+    vigente_hasta  = Column(Date)
+    activo         = Column(Boolean, default=True)
+    created_at     = Column(DateTime, server_default=func.now())
+    created_by     = Column(Integer, ForeignKey("seguridad.usuarios.id"))
+
+
 class ParametroSistema(Base):
     __tablename__  = "parametros_sistema"
     __table_args__ = {"schema": "clinica"}

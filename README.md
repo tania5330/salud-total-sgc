@@ -76,6 +76,30 @@ streamlit run app.py
 
 La app se encargará de crear los esquemas y tablas al primer arranque exitoso.
 
+## Subir cambios a GitHub
+
+Si ya tienes un repositorio en GitHub:
+
+```bash
+git add .
+git status
+git commit -m "Descripción de los cambios"
+git push origin main
+```
+
+Si es la primera vez que subes el proyecto:
+
+1. Crea un repositorio nuevo en GitHub (vacío, sin README).
+2. En la carpeta del proyecto ejecuta:
+
+```bash
+git remote add origin https://github.com/TU_USUARIO/NOMBRE_REPO.git
+git branch -M main
+git push -u origin main
+```
+
+Sustituye `TU_USUARIO` y `NOMBRE_REPO` por tu usuario de GitHub y el nombre del repositorio.
+
 # README.md — Sistema de Gestión Clínica "Salud Total"
 
 ## 🏥 Descripción
