@@ -140,12 +140,27 @@ def _run_seed_data_if_needed():
                 raise
 
 
-def test_connection() -> bool:
-    """Verificar que la conexión a la BD es exitosa."""
+def test_connection():
+    """
+    Verificar que la conexión a la BD es exitosa.
+    Retorna (True, None) si conecta, o (False, mensaje_error) si falla.
+    """
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        return True
+        return True, None
     except Exception as e:
+        err = str(e).strip()
         logger.error(f"Error de conexión a BD: {e}")
-        return False
+        # Mensaje breve para el usuario (sin exponer contraseñas)
+        if "password" in err.lower() or "authentication" in err.lower():
+            msg = "Error de autenticación. Revise usuario y contraseña (DB_USER/DB_PASSWORD o DATABASE_URL)."
+        elif "connect" in err.lower() or "refused" in err.lower() or "timeout" in err.lower():
+            msg = "No se pudo conectar al servidor. Revise host/puerto y que PostgreSQL esté en ejecución."
+        elif "does not exist" in err.lower() or "database" in err.lower():
+            msg = "La base de datos no existe o el nombre es incorrecto (DB_NAME o en DATABASE_URL)."
+        elif "ssl" in err.lower():
+            msg = "Error SSL. Si usa Render, la URL debe ser la External Database URL con sslmode."
+        else:
+            msg = err[:200] if len(err) > 200 else err
+        return False, msg

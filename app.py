@@ -155,8 +155,17 @@ def render_page(page: str):
 # ── Main ────────────────────────────────────────────────────
 def main():
     # Verificar conexión a BD al arrancar
-    if not test_connection():
+    ok, err_msg = test_connection()
+    if not ok:
         st.error("❌ No se pudo conectar a la base de datos. Verifique la configuración.")
+        if err_msg:
+            st.caption(f"Detalle: {err_msg}")
+        with st.expander("Qué revisar"):
+            st.markdown("""
+            - **Ejecutando en local:** Cree un archivo `.env` con `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` y asegúrese de que PostgreSQL esté corriendo.
+            - **En Streamlit Cloud:** En *Manage app → Settings → Secrets* defina `DATABASE_URL` (URL externa de Render) y `SECRET_KEY`.
+            - **Render:** Use la **External Database URL** del panel de PostgreSQL (no la interna).
+            """)
         st.stop()
 
     # Inicializar esquemas y tablas si aún no existen (sin mostrar mensaje de éxito)
